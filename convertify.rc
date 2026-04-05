@@ -1,0 +1,5 @@
+// convertify.rc
+// Compile with: windres convertify.rc -O coff -o convertify.syso
+// Or use: go generate
+
+1 24 "convertify.manifest"

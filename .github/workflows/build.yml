@@ -1,0 +1,123 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [created]       # triggers when you publish a GitHub Release
+  workflow_dispatch:        # allows manual trigger from the Actions tab
+
+permissions:
+  contents: write           # needed to upload assets to releases
+
+jobs:
+  build:
+    name: Build (Windows)
+    runs-on: windows-latest
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. Go ──────────────────────────────────────────────────────────────
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Download Go dependencies
+        run: go mod tidy
+
+      # ── 3. FFmpeg ──────────────────────────────────────────────────────────
+      # Downloads the official GPL Windows build from BtbN (most widely used
+      # prebuilt). Extracts only ffmpeg.exe and ffprobe.exe into assets\.
+      - name: Download FFmpeg
+        shell: pwsh
+        run: |
+          $url  = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+          $dest = "ffmpeg-build.zip"
+          Write-Host "Downloading FFmpeg..."
+          Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
+
+          Write-Host "Extracting..."
+          Expand-Archive -Path $dest -DestinationPath ffmpeg-extracted -Force
+
+          # The zip contains a single top-level folder; find it dynamically
+          $binDir = Get-ChildItem ffmpeg-extracted -Recurse -Filter "bin" -Directory | Select-Object -First 1
+          New-Item -ItemType Directory -Path assets -Force | Out-Null
+          Copy-Item "$($binDir.FullName)\ffmpeg.exe"  assets\
+          Copy-Item "$($binDir.FullName)\ffprobe.exe" assets\
+
+          Write-Host "FFmpeg version:"
+          & assets\ffmpeg.exe -version 2>&1 | Select-Object -First 1
+
+      # ── 4. Embed manifest (DPI awareness + visual styles) ──────────────────
+      # windres is bundled with MinGW on windows-latest (Git for Windows).
+      - name: Embed app manifest
+        shell: bash
+        run: |
+          WINDRES=$(find /c/ProgramData/chocolatey /c/mingw64 /c/msys64 \
+                        -name "windres.exe" 2>/dev/null | head -1)
+          if [ -n "$WINDRES" ]; then
+            echo "Found windres at $WINDRES"
+            "$WINDRES" convertify.rc -O coff -o convertify.syso
+            echo "Manifest embedded."
+          else
+            echo "windres not found – skipping manifest embed (app still works)."
+          fi
+
+      # ── 5. Compile ─────────────────────────────────────────────────────────
+      - name: Build convertify.exe
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          # -H windowsgui  → no console window when launched from desktop/file manager
+          # -s -w          → strip debug info (smaller binary)
+          go build -ldflags "-H windowsgui -s -w" -o dist\convertify.exe .
+          Write-Host "Binary size: $((Get-Item dist\convertify.exe).Length / 1MB -as [int]) MB"
+
+      # ── 6. Inno Setup installer ────────────────────────────────────────────
+      # Inno Setup 6 is pre-installed on windows-latest.
+      - name: Build installer
+        shell: pwsh
+        run: |
+          # Inject the version from the git tag (or "dev" for non-release builds)
+          $version = if ($env:GITHUB_REF -match "refs/tags/v(.+)") { $Matches[1] } else { "0.0.0-dev" }
+          Write-Host "Building installer for version $version"
+          iscc /DAppVersion=$version installer.iss
+          Write-Host "Installer size: $((Get-Item dist\convertify-setup.exe).Length / 1MB -as [int]) MB"
+
+      # ── 7. Upload build artifacts (available in the Actions tab) ──────────
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: convertify-windows
+          path: |
+            dist/convertify.exe
+            dist/convertify-setup.exe
+          retention-days: 30
+
+      # ── 8. Attach to GitHub Release (only when a release is published) ────
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/convertify.exe
+            dist/convertify-setup.exe
+          body: |
+            ## Descarga
+
+            | Archivo | Descripción |
+            |---------|-------------|
+            | `convertify-setup.exe` | **Instalador recomendado** – incluye FFmpeg, registra el menú contextual automáticamente |
+            | `convertify.exe` | Ejecutable solo – requiere FFmpeg en el PATH o en la misma carpeta |
+
+            ## Instalación
+            1. Descarga `convertify-setup.exe`
+            2. Ejecuta como Administrador
+            3. Haz clic derecho en cualquier imagen, video o audio → **Convertify**
