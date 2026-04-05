@@ -3,10 +3,10 @@
 > Conversor de archivos multimedia en el menú contextual de Windows.  
 > Clic derecho → convertir → listo. Sin ventanas. Sin apps abiertas.
 
-[![Build & Release](https://github.com/youruser/convertify/actions/workflows/build.yml/badge.svg)](https://github.com/youruser/convertify/actions/workflows/build.yml)
+[![Build & Release](https://github.com/andreileonsalas/convertify/actions/workflows/build.yml/badge.svg)](https://github.com/andreileonsalas/convertify/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/youruser/convertify)](https://github.com/youruser/convertify/releases/latest)
-[![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/youruser/convertify/releases)
+[![Release](https://img.shields.io/github/v/release/andreileonsalas/convertify)](https://github.com/andreileonsalas/convertify/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/andreileonsalas/convertify/releases)
 
 ---
 
@@ -38,7 +38,7 @@ Si abres `convertify.exe` directamente, se abre una UI mínima con drag & drop.
 
 ## Descarga
 
-👉 **[Descargar última versión](https://github.com/youruser/convertify/releases/latest)**
+👉 **[Descargar última versión](https://github.com/andreileonsalas/convertify/releases/latest)**
 
 | Archivo | Descripción |
 |---------|-------------|
@@ -71,7 +71,7 @@ Si abres `convertify.exe` directamente, se abre una UI mínima con drag & drop.
 
 ### Instalador (recomendado)
 
-1. Descarga `convertify-setup.exe` desde [Releases](https://github.com/youruser/convertify/releases/latest)
+1. Descarga `convertify-setup.exe` desde [Releases](https://github.com/andreileonsalas/convertify/releases/latest)
 2. Ejecuta como Administrador
 3. Listo — haz clic derecho en cualquier archivo multimedia
 
@@ -128,7 +128,7 @@ Si quieres compilar en tu máquina sin depender de CI:
 - [Inno Setup 6](https://jrsoftware.org/isinfo.php) para generar el instalador
 
 ```bat
-git clone https://github.com/youruser/convertify
+git clone https://github.com/andreileonsalas/convertify
 cd convertify
 mkdir assets
 copy C:\ruta\ffmpeg.exe assets\
