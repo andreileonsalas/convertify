@@ -46,7 +46,7 @@ func hiddenCmd(name string, args ...string) *exec.Cmd {
 // Convert converts inputPath to the given OutputFormat.
 // Output file is placed in the same directory as the input.
 // Returns the output file path.
-func Convert(inputPath string, fmt formats.OutputFormat) (string, error) {
+func Convert(inputPath string, format formats.OutputFormat) (string, error) {
 	ffmpegBin, err := findBinary("ffmpeg")
 	if err != nil {
 		return "", err
@@ -55,11 +55,11 @@ func Convert(inputPath string, fmt formats.OutputFormat) (string, error) {
 	// Build output path: same dir, same name, new extension
 	dir := filepath.Dir(inputPath)
 	baseName := strings.TrimSuffix(filepath.Base(inputPath), filepath.Ext(inputPath))
-	outPath := buildOutputPath(dir, baseName, fmt.Ext)
+	outPath := buildOutputPath(dir, baseName, format.Ext)
 
 	// Build args: -y (overwrite) -i <input> [format args] <output>
 	args := []string{"-y", "-i", inputPath}
-	args = append(args, fmt.Args...)
+	args = append(args, format.Args...)
 	args = append(args, outPath)
 
 	cmd := hiddenCmd(ffmpegBin, args...)
