@@ -268,7 +268,7 @@ func Run() {
 				TextColor: walk.RGB(0, 120, 60),
 			},
 		},
-	}).Create(&mw); err != nil {
+	}).Create(); err != nil {
 		panic(err)
 	}
 
